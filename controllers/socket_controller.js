@@ -166,6 +166,14 @@ const getNewYachts = function () {
 	return yachts
 }
 
+const handleChatMessage = async function (data) {
+
+	const room = rooms.find(room => room.users.find(user => user.id === this.id));
+
+	// emit `chat:message` event to everyone EXCEPT the sender
+	this.broadcast.to(room.id).emit('chat:message', data);
+}
+
 module.exports = function (socket, _io) {
 	// save a reference to the socket.io server instance
 	io = _io;
@@ -221,5 +229,7 @@ module.exports = function (socket, _io) {
 			roomName = false;
 		};
 	});
+
+	socket.on('chat:message', handleChatMessage);
 
 }
