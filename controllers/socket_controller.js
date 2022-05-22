@@ -152,7 +152,6 @@ const getNewYachts = function () {
 
 		// if we get a proper yacht we push it to all yachts array
 		yachts.push(new_yacht);
-		// console.log('Added yacht: ', new_yacht);
 	}
 	return yachts
 }
@@ -160,7 +159,10 @@ const getNewYachts = function () {
 const handleChatMessage = async function (data) {
 
 	const room = rooms.find(room => room.users.find(user => user.id === this.id));
-
+	if (!room) {
+		// debug('There is no such room');
+		return;
+	}
 	// emit `chat:message` event to everyone EXCEPT the sender
 	this.broadcast.to(room.id).emit('chat:message', data);
 }
@@ -216,7 +218,9 @@ module.exports = function (socket, _io) {
 
 		// if we don't need to wait an opponent anymore:
 		if (!waiting_opponent) {
-			io.to(room.id).emit('user:opponent_found', waiting_opponent, room);
+			socket.emit('user:opponent_found', waiting_opponent, room.users[0].username);
+			socket.to(room.id).emit('user:opponent_found', waiting_opponent, username);
+
 			// discard the temporary variables
 			waiting_opponent = true;
 			roomName = false;
