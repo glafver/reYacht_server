@@ -18,15 +18,6 @@ const handleDisconnect = function () {
 	debug(`Client ${this.id} disconnected :(`);
 }
 
-//  Handle game start
-
-const handleGameStart = function () {
-	debug(`Client ${this.id} wants to start the game`);
-
-	// tell everyone connected to start their games
-	io.emit('game:start')
-}
-
 const getNewYachts = function () {
 	const FIELD_SIZE = 10;
 	const yacht_sizes = [4, 3, 2, 2];
@@ -183,10 +174,7 @@ module.exports = function (socket, _io) {
 	// handle user disconnect
 	socket.on('disconnect', handleDisconnect);
 
-	// listen for 'game:start' event
-	socket.on('game:start', handleGameStart)
-
-	socket.on('user:joined', function (username) {
+	socket.on('user:joined', function (username, callback) {
 
 		// if there is no room creating a new room with id equal to the first users id
 		if (!roomName) {
@@ -220,6 +208,11 @@ module.exports = function (socket, _io) {
 		}
 		// debug(user.yachts)
 		room.users.push(user);
+
+		callback({
+			yachts: user.yachts,
+			waiting: waiting_opponent
+		});
 
 		// if we don't need to wait an opponent anymore:
 		if (!waiting_opponent) {
