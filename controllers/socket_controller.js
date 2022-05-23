@@ -43,6 +43,17 @@ const getNewYachts = function () {
 			}
 			// contains information about position of grid divs occupied by our ship
 			this.points = this.getPoints(length, row_start, col_start, vertical)
+
+			this.hit_points = []
+			this.is_killed = false
+		}
+
+		isHit(row, col) {
+			// iterating over points and check for hits
+			// compare hit_points with points
+			// if miss => return 'miss'
+			// if hit => return 'hit'
+			// if hit_points === points => set is_killed to true; return 'killed'
 		}
 
 		// checks if every point of a newly created yacht will intersect existing yachts
@@ -237,5 +248,11 @@ module.exports = function (socket, _io) {
 	});
 
 	socket.on('chat:message', handleChatMessage);
+
+	socket.on('game:shoot', (shootTarget) => {
+		const room = rooms.find(room => room.users.find(user => user.id === socket.id));
+		const user = room.users.find(user => user.id === socket.id);
+		debug(user.username, shootTarget)
+	})
 
 }
