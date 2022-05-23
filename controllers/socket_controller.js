@@ -178,7 +178,7 @@ module.exports = function (socket, _io) {
 
 	socket.on('user:joined', function (username, callback) {
 
-		// if there is no room creating a new room with id equal to the first users id
+		// if there is no room creating a new room with id equal to the first sockets id
 		if (!roomName) {
 			roomName = 'room_' + this.id;
 			let room = {
@@ -206,7 +206,8 @@ module.exports = function (socket, _io) {
 		let user = {
 			id: this.id,
 			username: username,
-			yachts: getNewYachts()
+			yachts: getNewYachts(),
+			move: false
 		}
 		// debug(user.yachts)
 		room.users.push(user);
@@ -218,8 +219,16 @@ module.exports = function (socket, _io) {
 
 		// if we don't need to wait an opponent anymore:
 		if (!waiting_opponent) {
-			socket.emit('user:opponent_found', waiting_opponent, room.users[0].username);
-			socket.to(room.id).emit('user:opponent_found', waiting_opponent, username);
+
+			// choose a random user to move first
+			let user_to_move_first = Math.floor(Math.random() * 2);
+			room.users[user_to_move_first].move = true;
+
+			// sever emit to second socket waiting status, opponent name and who move first
+			socket.emit('user:opponent_found', waiting_opponent, room.users[0].username, room.users[1].move);
+
+			// sever emit to first socket waiting status, opponent name and who move first
+			socket.to(room.id).emit('user:opponent_found', waiting_opponent, username, room.users[0].move);
 
 			// discard the temporary variables
 			waiting_opponent = true;
