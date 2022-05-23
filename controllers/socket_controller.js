@@ -12,6 +12,9 @@ let waiting_opponent = true;
 // creating a temporary variabel with a name for room
 let roomName = false;
 
+// List of row and column locations where a yacht is present
+let yachtSquares = [];
+
 //  Handle a user disconnecting
 
 const handleDisconnect = function () {
@@ -164,6 +167,12 @@ const getNewYachts = function () {
 		// if we get a proper yacht we push it to all yachts array
 		yachts.push(new_yacht);
 	}
+
+	// Extracting and then Pushing all randomly placed out yacht columns and rows into the yachtSquares array.
+    yachts.forEach((yacht) => {
+        yachtSquares.push(yacht.points)
+    })
+	
 	return yachts
 }
 
