@@ -172,7 +172,7 @@ const getNewYachts = function () {
     yachts.forEach((yacht) => {
         yachtSquares.push(yacht.points)
     })
-	
+
 	return yachts
 }
 
@@ -261,6 +261,25 @@ module.exports = function (socket, _io) {
 	socket.on('game:shoot', (shootTarget) => {
 		const room = rooms.find(room => room.users.find(user => user.id === socket.id));
 		const user = room.users.find(user => user.id === socket.id);
+
+		// For each yacht,
+        yachtSquares.forEach((item) => {
+            // Map over the specific columns and rows of every point and return an object containing the coordinates
+            item.map((obj) => {
+                return ({row: obj.row, col: obj.col})
+            })
+            // For each square,
+            .filter((square) => {
+                // Check if user has hit a square containing a yacht, return the coordinates of the hit yacht.
+                if (square.row === shootTarget.row && square.col === shootTarget.col) {
+                    debug(square)
+                // If user shoots a tile and misses, return nothing.
+                } else {
+                    return
+                }
+            })
+        })
+
 		debug(user.username, shootTarget)
 	})
 
