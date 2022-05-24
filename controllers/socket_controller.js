@@ -184,6 +184,10 @@ const handleChatMessage = async function (data) {
 	this.broadcast.to(room.id).emit('chat:message', data);
 }
 
+const handleTurn = function () {
+	user.move = false
+}
+
 module.exports = function (socket, _io) {
 	// save a reference to the socket.io server instance
 	io = _io;
@@ -321,5 +325,7 @@ module.exports = function (socket, _io) {
 
 
 	})
+
+	socket.on('change:turn', handleTurn)
 
 }
