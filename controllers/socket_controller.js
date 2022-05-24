@@ -15,6 +15,12 @@ let roomName = false;
 // List of row and column locations where a yacht is present
 let yachtSquares = [];
 
+// User 1 yachts
+let userOneYachts = []
+
+// User 2 yachts
+let userTwoYachts = []
+
 //  Handle a user disconnecting
 
 const handleDisconnect = function () {
@@ -229,8 +235,10 @@ module.exports = function (socket, _io) {
 			yachts: getNewYachts(),
 			move: false
 		}
-		// debug(user.yachts)
+
 		room.users.push(user);
+
+		// debug(room.users)
 
 		callback({
 			yachts: user.yachts,
@@ -253,34 +261,58 @@ module.exports = function (socket, _io) {
 			// discard the temporary variables
 			waiting_opponent = true;
 			roomName = false;
+
+			room.users.forEach((user) => {
+				userOneYachts.push({user: user.username, yachts: user.yachts})
+			})
+
+			debug(userOneYachts)
 		};
 	});
 
 	socket.on('chat:message', handleChatMessage);
 
 	socket.on('game:shoot', (shootTarget) => {
+
+		if (shootTarget) {
 		const room = rooms.find(room => room.users.find(user => user.id === socket.id));
+		// debug(room)
 		const user = room.users.find(user => user.id === socket.id);
-
+		// debug(user)
+				debug(user.username)
+		userOneYachts.filter((item) => {
+			if (item.user !== user.username) {
+				debug(item)
+			} else {
+				return
+			}
+		})
+		// userOneYachts.foreach((item) => {
+		// 	debug(item)
+		// })
+		debug(userOneYachts)
 		// For each yacht,
-        yachtSquares.forEach((item) => {
-            // Map over the specific columns and rows of every point and return an object containing the coordinates
-            item.map((obj) => {
-                return ({row: obj.row, col: obj.col})
-            })
-            // For each square,
-            .filter((square) => {
-                // Check if user has hit a square containing a yacht, return the coordinates of the hit yacht.
-                if (square.row === shootTarget.row && square.col === shootTarget.col) {
-                    debug(square)
-                // If user shoots a tile and misses, return nothing.
-                } else {
-                    return
-                }
-            })
-        })
+    //     yachtSquares.forEach((item) => {
+    //         // Map over the specific columns and rows of every point and return an object containing the coordinates
+    //         item.map((obj) => {
+    //             return ({row: obj.row, col: obj.col})
+    //         })
+    //         // For each square,
+    //         .filter((square) => {
+    //             // Check if user has hit a square containing a yacht, return the coordinates of the hit yacht.
+    //             if (square.row === shootTarget.row && square.col === shootTarget.col) {
+    //                 debug(square)
+    //             // If user shoots a tile and misses, return nothing.
+    //             } else {
+    //                 return
+    //             }
+    //         })
+    //     })
 
-		debug(user.username, shootTarget)
+	// 	// debug(user.username, shootTarget)
+		}
+
+
 	})
 
 }
