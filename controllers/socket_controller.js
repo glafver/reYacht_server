@@ -15,6 +15,9 @@ let roomName = false;
 // Empty array of all connected users and their respective yachts
 let userYachts = []
 
+// Empty array containing all yacht coordinates that were hit
+let hitYachtCoordinate = []
+
 //  Handle a user disconnecting
 const handleDisconnect = function () {
 	debug(`Client ${this.id} disconnected :(`);
@@ -274,10 +277,12 @@ module.exports = function (socket, _io) {
 				// Map out other users yachts
 				item.yachts.map((yacht) => {
 					// Filter out rows and columns ( coordinates ) of the yachts
-					yacht.points.filter((coordinate) => {
-						// Check if the coordinates of the shootTarget match any of the other users yacht coordinates, and if so, display 'hit' in terminal, if not, return nothing
+					yacht.points.filter((coordinate, index) => {
+						// Check if the coordinates of the shootTarget match any of the other users yacht coordinates and if so, remove it from the array and push it in hitYachtCoordinate array, if not, return nothing
 						if (coordinate.row === shootTarget.row && coordinate.col === shootTarget.col) {
-							debug('hit')
+							hitYachtCoordinate.push({pointsHit: yacht.points.splice(index, 1), shooter: user.username})
+
+							debug('yacht-points:', yacht.points, 'hitYachtCoordinate-array:', hitYachtCoordinate)
 						} else {
 							return
 						}
@@ -285,6 +290,23 @@ module.exports = function (socket, _io) {
 				})
 			} 
 		})
+
+		// Check if one shooter has sunk 11 yacht coordinates, if so, declare him/her the winner
+		// hitYachtCoordinate.forEach((hitCoordinate) => {
+		// 	// Variable for amount of yachts hit
+		// 	let count = 0
+		// 	if (hitCoordinate.shooter === user.username) {
+		// 		count += 1
+		// 		debug(count)
+		// 		return count
+		// 	}
+		// })
+
+		const playerHits = hitYachtCoordinate.reduce((count, e) => { return e.shooter === user.username ? count + 1 : count }, 0);
+
+		if (playerHits >= 11) {
+			debug(user.username, 'has won!')
+		}
 		}
 
 
