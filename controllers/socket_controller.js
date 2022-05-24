@@ -266,6 +266,7 @@ module.exports = function (socket, _io) {
 		const user = room.users.find(user => user.id === socket.id);
 
 		debug(user.username)
+		debug("room", room.id)
 
 		// Iterate over, and filter out the names and respective yachts,
 		userYachts.filter((item) => {
@@ -277,8 +278,16 @@ module.exports = function (socket, _io) {
 					yacht.points.filter((coordinate) => {
 						// Check if the coordinates of the shootTarget match any of the other users yacht coordinates, and if so, display 'hit' in terminal, if not, return nothing
 						if (coordinate.row === shootTarget.row && coordinate.col === shootTarget.col) {
-							debug('hit')
+							
+							let hit = "that was a hit"
+							debug(coordinate.row, coordinate.col)
+							let rowCor = coordinate.row+1
+							let colCor = coordinate.col+1
+							io.to(user.id).emit('shot:hit', hit, rowCor, colCor)
+							
 						} else {
+							let miss = "you missed :("
+							io.to(user.id).emit('shot:miss', miss, coordinate)
 							return
 						}
 					})
