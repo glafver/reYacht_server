@@ -272,10 +272,15 @@ module.exports = function (socket, _io) {
             .filter((square) => {
                 // Check if user has hit a square containing a yacht, return the coordinates of the hit yacht.
                 if (square.row === shootTarget.row && square.col === shootTarget.col) {
-                    debug(square)
+					if (user.username !== socket.id){
+						debug("hit", square)
+						io.to(room).emit('shot:hit', square)
+					}
                 // If user shoots a tile and misses, return nothing.
-                } else {
+                } else if (square.row !== shootTarget.row && square.col !== shootTarget.col){
+					/* debug("miss", square) */
                     return
+	
                 }
             })
         })
