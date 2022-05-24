@@ -281,9 +281,10 @@ module.exports = function (socket, _io) {
 			if (item.user !== user.username) {
 				// Map out other users yachts
 				item.yachts.map((yacht) => {
-					// Filter out rows and columns ( coordinates ) of the yachts
+					// debug(yacht)
+					// Filter out rows and columns ( coordinates ) of the yachts aswell as their index in the array
 					yacht.points.filter((coordinate, index) => {
-						// Check if the coordinates of the shootTarget match any of the other users yacht coordinates and if so, remove it from the array and push it in hitYachtCoordinate array, if not, return nothing
+						// Check if the coordinates of the shootTarget match any of the other users yacht coordinates and if so, splice it from the array and push it in hitYachtCoordinate array, if not, return nothing
 						if (coordinate.row === shootTarget.row && coordinate.col === shootTarget.col) {
 							
 							let hit = "that was a hit"
@@ -293,37 +294,30 @@ module.exports = function (socket, _io) {
 							io.to(user.id).emit('shot:hit', hit, rowCor, colCor)
 							
 							hitYachtCoordinate.push({pointsHit: yacht.points.splice(index, 1), shooter: user.username})
-
 							debug('yacht-points:', yacht.points, 'hitYachtCoordinate-array:', hitYachtCoordinate)
 						} else {
 							let miss = "you missed :("
 							io.to(user.id).emit('shot:miss', miss, coordinate)
 							return
 						}
+
+						// Since the yacht.points returns an array of points left on the ship, when a ship is hit, it returns an empty array when a ship is sunk! This conditional checks if the ship that was hit has a length of 0 and if it does, it reports that the ship has been sunk in the terminal.
+						if (yacht.points.length === 0) {
+							debug('a ship has been sunk!')
+						}
 					})
 				})
 			} 
 		})
 
-		// Check if one shooter has sunk 11 yacht coordinates, if so, declare him/her the winner
-		// hitYachtCoordinate.forEach((hitCoordinate) => {
-		// 	// Variable for amount of yachts hit
-		// 	let count = 0
-		// 	if (hitCoordinate.shooter === user.username) {
-		// 		count += 1
-		// 		debug(count)
-		// 		return count
-		// 	}
-		// })
-
+		// On every shot, check how many hit shots the shooter has made during the game
 		const playerHits = hitYachtCoordinate.reduce((count, e) => { return e.shooter === user.username ? count + 1 : count }, 0);
 
+		// If the amount of hit shots equals to or for some reason is greater than 11, that played is declared the winner, since it means that all opponent ships are sunk.
 		if (playerHits >= 11) {
 			debug(user.username, 'has won!')
 		}
 		}
-
-
 	})
 
 	socket.on('change:turn', handleTurn)
