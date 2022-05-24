@@ -12,17 +12,10 @@ let waiting_opponent = true;
 // creating a temporary variabel with a name for room
 let roomName = false;
 
-// List of row and column locations where a yacht is present
-let yachtSquares = [];
-
-// User 1 yachts
-let userOneYachts = []
-
-// User 2 yachts
-let userTwoYachts = []
+// Empty array of all connected users and their respective yachts
+let userYachts = []
 
 //  Handle a user disconnecting
-
 const handleDisconnect = function () {
 	debug(`Client ${this.id} disconnected :(`);
 }
@@ -174,11 +167,6 @@ const getNewYachts = function () {
 		yachts.push(new_yacht);
 	}
 
-	// Extracting and then Pushing all randomly placed out yacht columns and rows into the yachtSquares array.
-    yachts.forEach((yacht) => {
-        yachtSquares.push(yacht.points)
-    })
-
 	return yachts
 }
 
@@ -262,11 +250,10 @@ module.exports = function (socket, _io) {
 			waiting_opponent = true;
 			roomName = false;
 
+			// Push the username and yachts for each user into the empty userYachts array
 			room.users.forEach((user) => {
-				userOneYachts.push({user: user.username, yachts: user.yachts})
+				userYachts.push({user: user.username, yachts: user.yachts})
 			})
-
-			debug(userOneYachts)
 		};
 	});
 
@@ -276,40 +263,28 @@ module.exports = function (socket, _io) {
 
 		if (shootTarget) {
 		const room = rooms.find(room => room.users.find(user => user.id === socket.id));
-		// debug(room)
 		const user = room.users.find(user => user.id === socket.id);
-		// debug(user)
-				debug(user.username)
-		userOneYachts.filter((item) => {
-			if (item.user !== user.username) {
-				debug(item)
-			} else {
-				return
-			}
-		})
-		// userOneYachts.foreach((item) => {
-		// 	debug(item)
-		// })
-		debug(userOneYachts)
-		// For each yacht,
-    //     yachtSquares.forEach((item) => {
-    //         // Map over the specific columns and rows of every point and return an object containing the coordinates
-    //         item.map((obj) => {
-    //             return ({row: obj.row, col: obj.col})
-    //         })
-    //         // For each square,
-    //         .filter((square) => {
-    //             // Check if user has hit a square containing a yacht, return the coordinates of the hit yacht.
-    //             if (square.row === shootTarget.row && square.col === shootTarget.col) {
-    //                 debug(square)
-    //             // If user shoots a tile and misses, return nothing.
-    //             } else {
-    //                 return
-    //             }
-    //         })
-    //     })
 
-	// 	// debug(user.username, shootTarget)
+		debug(user.username)
+
+		// Iterate over, and filter out the names and respective yachts,
+		userYachts.filter((item) => {
+			// Conditional that accesses only the other user's yachts
+			if (item.user !== user.username) {
+				// Map out other users yachts
+				item.yachts.map((yacht) => {
+					// Filter out rows and columns ( coordinates ) of the yachts
+					yacht.points.filter((coordinate) => {
+						// Check if the coordinates of the shootTarget match any of the other users yacht coordinates, and if so, display 'hit' in terminal, if not, return nothing
+						if (coordinate.row === shootTarget.row && coordinate.col === shootTarget.col) {
+							debug('hit')
+						} else {
+							return
+						}
+					})
+				})
+			} 
+		})
 		}
 
 
