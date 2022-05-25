@@ -291,9 +291,13 @@ module.exports = function (socket, _io) {
 							
 							hitYachtCoordinate.push({pointsHit: yacht.points.splice(index, 1), shooter: user.username})
 							debug('yacht-points:', yacht.points, 'hitYachtCoordinate-array:', hitYachtCoordinate)
-						} else {
+						} if (coordinate.row !== shootTarget.row && coordinate.col !== shootTarget.col) {
 							let miss = "you missed :("
-							io.to(user.id).emit('shot:miss', miss, coordinate)
+							let rowCorMiss = coordinate.row+1
+							let colCorMiss = coordinate.col+1
+							debug(coordinate)
+							io.to(user.id).emit('shot:miss', miss, rowCorMiss, colCorMiss)
+						} else {
 							return
 						}
 
@@ -314,5 +318,14 @@ module.exports = function (socket, _io) {
 			debug(user.username, 'has won!')
 		}
 		}
+	})
+
+	socket.on('next:turn', function (rowCorr, colCorr, room) {
+		const info = {
+			rowCorr: rowCorr,
+			colCorr: colCorr,
+			player: this.id
+		}
+		io.to(room.id).emit('turn', info)
 	})
 }
