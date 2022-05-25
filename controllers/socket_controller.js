@@ -18,6 +18,8 @@ let userYachts = []
 // Empty array containing all yacht coordinates that were hit
 let hitYachtCoordinate = []
 
+let yachtHits = []
+
 //  Handle a user disconnecting
 const handleDisconnect = function () {
 	debug(`Client ${this.id} disconnected :(`);
@@ -283,19 +285,32 @@ module.exports = function (socket, _io) {
 						// Check if the coordinates of the shootTarget match any of the other users yacht coordinates and if so, splice it from the array and push it in hitYachtCoordinate array, if not, return nothing
 						if (coordinate.row === shootTarget.row && coordinate.col === shootTarget.col) {
 							
-							let hit = "that was a hit"
+
 							let rowCor = coordinate.row+1
 							let colCor = coordinate.col+1
 							io.to(user.id).emit('shot:hit', rowCor, colCor)
 							
 							hitYachtCoordinate.push({pointsHit: yacht.points.splice(index, 1), shooter: user.username})
 							debug('yacht-points:', yacht.points, 'hitYachtCoordinate-array:', hitYachtCoordinate)
+
+							yachtHits.push(hitYachtCoordinate.filter((hit) => {
+								/* debug(hit.pointsHit)
+								return hit.pointsHit */
+								let yachtHit = {
+									corrs: hit.pointsHit,
+									id: socket.id
+								}
+
+								io.to(user.id).emit('store:hit', yachtHit)
+								return yachtHit
+							}))
+							debug("yachthits",yachtHits)
 						} if (coordinate.row !== shootTarget.row && coordinate.col !== shootTarget.col) {
-							let miss = "you missed :("
+							
 							let rowCorMiss = coordinate.row+1
 							let colCorMiss = coordinate.col+1
 							/* debug(coordinate) */
-							io.to(user.id).emit('shot:miss', miss, rowCorMiss, colCorMiss)
+							io.to(user.id).emit('shot:miss', rowCorMiss, colCorMiss)
 						} else {
 							return
 						}
