@@ -287,7 +287,7 @@ module.exports = function (socket, _io) {
 							debug(coordinate.row, coordinate.col)
 							let rowCor = coordinate.row+1
 							let colCor = coordinate.col+1
-							io.to(user.id).emit('shot:hit', hit, rowCor, colCor)
+							io.to(user.id).emit('shot:hit', rowCor, colCor)
 							
 							hitYachtCoordinate.push({pointsHit: yacht.points.splice(index, 1), shooter: user.username})
 							debug('yacht-points:', yacht.points, 'hitYachtCoordinate-array:', hitYachtCoordinate)
@@ -295,7 +295,7 @@ module.exports = function (socket, _io) {
 							let miss = "you missed :("
 							let rowCorMiss = coordinate.row+1
 							let colCorMiss = coordinate.col+1
-							debug(coordinate)
+							/* debug(coordinate) */
 							io.to(user.id).emit('shot:miss', miss, rowCorMiss, colCorMiss)
 						} else {
 							return
