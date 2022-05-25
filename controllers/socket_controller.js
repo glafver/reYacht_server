@@ -305,6 +305,10 @@ module.exports = function (socket, _io) {
 			} 
 		})
 
+		let currentMover = user.move
+		// Toggling turn based system
+		socket.emit('change:turn', currentMover)
+
 		// On every shot, check how many hit shots the shooter has made during the game
 		const playerHits = hitYachtCoordinate.reduce((count, e) => { return e.shooter === user.username ? count + 1 : count }, 0);
 
