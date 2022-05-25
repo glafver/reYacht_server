@@ -278,13 +278,12 @@ module.exports = function (socket, _io) {
 				// Map out other users yachts
 				item.yachts.map((yacht) => {
 					// debug(yacht)
-					// Filter out rows and columns ( coordinates ) of the yachts aswell as their index in the array
-					yacht.points.filter((coordinate, index) => {
+					// map out the rows and columns ( coordinates ) of the yachts aswell as their index in the array
+					yacht.points.map((coordinate, index) => {
 						// Check if the coordinates of the shootTarget match any of the other users yacht coordinates and if so, splice it from the array and push it in hitYachtCoordinate array, if not, return nothing
 						if (coordinate.row === shootTarget.row && coordinate.col === shootTarget.col) {
 							
 							let hit = "that was a hit"
-							debug(coordinate.row, coordinate.col)
 							let rowCor = coordinate.row+1
 							let colCor = coordinate.col+1
 							io.to(user.id).emit('shot:hit', rowCor, colCor)
@@ -309,6 +308,10 @@ module.exports = function (socket, _io) {
 				})
 			} 
 		})
+
+		let currentMover = user.move
+		// Toggling turn based system
+		socket.emit('change:turn', currentMover)
 
 		// On every shot, check how many hit shots the shooter has made during the game
 		const playerHits = hitYachtCoordinate.reduce((count, e) => { return e.shooter === user.username ? count + 1 : count }, 0);
