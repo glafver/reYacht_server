@@ -268,9 +268,6 @@ module.exports = function (socket, _io) {
 		const room = rooms.find(room => room.users.find(user => user.id === socket.id));
 		const user = room.users.find(user => user.id === socket.id);
 
-		debug(user.username)
-		debug("room", room.id)
-
 		// Iterate over, and filter out the names and respective yachts,
 		userYachts.filter((item) => {
 			// Conditional that accesses only the other user's yachts
@@ -289,7 +286,6 @@ module.exports = function (socket, _io) {
 							io.to(user.id).emit('shot:hit', hit, rowCor, colCor)
 							
 							hitYachtCoordinate.push({pointsHit: yacht.points.splice(index, 1), shooter: user.username})
-							debug('yacht-points:', yacht.points, 'hitYachtCoordinate-array:', hitYachtCoordinate)
 						} else {
 							let miss = "you missed :("
 							io.to(user.id).emit('shot:miss', miss, coordinate)
@@ -305,9 +301,11 @@ module.exports = function (socket, _io) {
 			} 
 		})
 
-		let currentMover = user.move
-		// Toggling turn based system
-		socket.emit('change:turn', currentMover)
+		// Emit to the person that just fired a shot that it shouldnt be his/her turn anymore
+		socket.emit('shoot-status:false')
+
+		// Emit to the other user that it now should be his/her turn to fire a shot
+		socket.broadcast.to(room.id).emit('shoot-status:true')
 
 		// On every shot, check how many hit shots the shooter has made during the game
 		const playerHits = hitYachtCoordinate.reduce((count, e) => { return e.shooter === user.username ? count + 1 : count }, 0);
