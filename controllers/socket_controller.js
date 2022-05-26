@@ -20,125 +20,133 @@ let hitYachtCoordinate = []
 
 let yachtHits = []
 
+// we declare class yacht for create a new yacht
+class Yacht {
+
+	// @length - how many spans our ship will take on battlefield
+	// @row_start - the starting row of our ship 
+	// @row_col - the starting column of our ship 
+	// @vertical - horizontal ship = "0", vertical ship = "1"
+	constructor(length, row_start, col_start, vertical) {
+		this.row_start = row_start
+		this.col_start = col_start
+
+		if (vertical === 0) {
+			this.row_end = "span " + 1
+			this.col_end = "span " + length
+		} else {
+			this.row_end = "span " + length
+			this.col_end = "span " + 1
+		}
+		// contains information about position of grid divs occupied by our ship
+		this.points = this.getPoints(length, row_start, col_start, vertical)
+		this.hit_points = []
+		this.is_killed = false
+
+	}
+
+	isHit(shootTarget) {
+		// debug('test is Hit', shootTarget, this.points)
+		for (let point of this.points) {
+			if (point.row === shootTarget.row && point.col === shootTarget.col) {
+				debug('we add point', point)
+				this.hit_points.push(shootTarget)
+				debug('lenghth!!!', this.hit_points.length, this.points.length)
+				if (this.points.length === this.hit_points.length) {
+					this.is_killed = true
+				}
+				return true
+			}
+		}
+		return false
+	}
+
+
+	// checks if every point of a newly created yacht will intersect existing yachts
+	isNear(other_yacht) {
+
+		let current_yacht_points = this.points;
+		let other_yacht_points = other_yacht.points;
+
+		for (let current_yacht_point of current_yacht_points) {
+			for (let other_yacht_point of other_yacht_points) {
+				// points are considered as near if they have either same position or 
+				// they are neighbours (neighbors mean row/colum difference is 1).
+				if (Math.abs(current_yacht_point.row - other_yacht_point.row) <= 1
+					&& Math.abs(current_yacht_point.col - other_yacht_point.col) <= 1) {
+
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+	// checks current yacht is located within battlefield
+	isNotFitField(field_rows, field_columns) {
+
+		let current_yacht_points = this.points;
+		// we check if every point within battlefield. 
+		// 0 < column <= field_columns
+		// 0 < row    <= field_rows
+		for (let point of current_yacht_points) {
+			if (point.row >= field_rows || point.row < 0 || point.col >= field_columns || point.col < 0) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	// generates points for a nnew yacht
+	getPoints(length, row_start, col_start, vertical) {
+		let points = [{ row: row_start, col: col_start }];
+
+		// if it is a 2 points ship
+		if (length === 2) {
+			// and it is horizontal
+			if (vertical === 0) {
+				// we keep the same row but add another column horizontally
+				points.push({ row: row_start, col: col_start + 1 })
+			} else {
+				// if it is vertical we add another row
+				points.push({ row: row_start + 1, col: col_start })
+			}
+			// do the same for other ships
+		} else if (length === 3) {
+			if (vertical === 0) {
+				points.push({ row: row_start, col: col_start + 1 })
+				points.push({ row: row_start, col: col_start + 2 })
+
+			} else {
+				points.push({ row: row_start + 1, col: col_start })
+				points.push({ row: row_start + 2, col: col_start })
+			}
+		} else if (length === 4) {
+			if (vertical === 0) {
+				points.push({ row: row_start, col: col_start + 1 })
+				points.push({ row: row_start, col: col_start + 2 })
+				points.push({ row: row_start, col: col_start + 3 })
+
+			} else {
+				points.push({ row: row_start + 1, col: col_start })
+				points.push({ row: row_start + 2, col: col_start })
+				points.push({ row: row_start + 3, col: col_start })
+			}
+		}
+		return points;
+	}
+
+}
 //  Handle a user disconnecting
 const handleDisconnect = function () {
-	debug(`Client ${this.id} disconnected :(`);
+	// debug(`Client ${this.id} disconnected :(`);
 }
 
 const getNewYachts = function () {
 	const FIELD_SIZE = 10;
 	const yacht_sizes = [4, 3, 2, 2];
 	const yachts = [];
-
-	// we declare class yacht for create a new yacht
-	class Yacht {
-
-		// @length - how many spans our ship will take on battlefield
-		// @row_start - the starting row of our ship 
-		// @row_col - the starting column of our ship 
-		// @vertical - horizontal ship = "0", vertical ship = "1"
-		constructor(length, row_start, col_start, vertical) {
-			this.row_start = row_start
-			this.col_start = col_start
-
-			if (vertical === 0) {
-				this.row_end = "span " + 1
-				this.col_end = "span " + length
-			} else {
-				this.row_end = "span " + length
-				this.col_end = "span " + 1
-			}
-			// contains information about position of grid divs occupied by our ship
-			this.points = this.getPoints(length, row_start, col_start, vertical)
-
-			this.hit_points = []
-			this.is_killed = false
-		}
-
-		isHit(row, col) {
-			// iterating over points and check for hits
-			// compare hit_points with points
-			// if miss => return 'miss'
-			// if hit => return 'hit'
-			// if hit_points === points => set is_killed to true; return 'killed'
-		}
-
-		// checks if every point of a newly created yacht will intersect existing yachts
-		isNear(other_yacht) {
-
-			let current_yacht_points = this.points;
-			let other_yacht_points = other_yacht.points;
-
-			for (let current_yacht_point of current_yacht_points) {
-				for (let other_yacht_point of other_yacht_points) {
-					// points are considered as near if they have either same position or 
-					// they are neighbours (neighbors mean row/colum difference is 1).
-					if (Math.abs(current_yacht_point.row - other_yacht_point.row) <= 1
-						&& Math.abs(current_yacht_point.col - other_yacht_point.col) <= 1) {
-
-						return true;
-					}
-				}
-			}
-
-			return false;
-		}
-		// checks current yacht is located within battlefield
-		isNotFitField(field_rows, field_columns) {
-
-			let current_yacht_points = this.points;
-			// we check if every point within battlefield. 
-			// 0 < column <= field_columns
-			// 0 < row    <= field_rows
-			for (let point of current_yacht_points) {
-				if (point.row >= field_rows || point.row < 0 || point.col >= field_columns || point.col < 0) {
-					return true;
-				}
-			}
-
-			return false;
-		}
-
-		// generates points for a nnew yacht
-		getPoints(length, row_start, col_start, vertical) {
-			let points = [{ row: row_start, col: col_start }];
-
-			// if it is a 2 points ship
-			if (length === 2) {
-				// and it is horizontal
-				if (vertical === 0) {
-					// we keep the same row but add another column horizontally
-					points.push({ row: row_start, col: col_start + 1 })
-				} else {
-					// if it is vertical we add another row
-					points.push({ row: row_start + 1, col: col_start })
-				}
-				// do the same for other ships
-			} else if (length === 3) {
-				if (vertical === 0) {
-					points.push({ row: row_start, col: col_start + 1 })
-					points.push({ row: row_start, col: col_start + 2 })
-
-				} else {
-					points.push({ row: row_start + 1, col: col_start })
-					points.push({ row: row_start + 2, col: col_start })
-				}
-			} else if (length === 4) {
-				if (vertical === 0) {
-					points.push({ row: row_start, col: col_start + 1 })
-					points.push({ row: row_start, col: col_start + 2 })
-					points.push({ row: row_start, col: col_start + 3 })
-
-				} else {
-					points.push({ row: row_start + 1, col: col_start })
-					points.push({ row: row_start + 2, col: col_start })
-					points.push({ row: row_start + 3, col: col_start })
-				}
-			}
-			return points;
-		}
-
-	}
 
 	// here we generate yachts based on how many yachts we need
 	for (let i = 0; i < yacht_sizes.length; i++) {
@@ -168,10 +176,11 @@ const getNewYachts = function () {
 			// and we repeat this logic until we get a proper yacht
 		} while (is_near || is_not_fit_field);
 
+		// console.log('user yacht: ', new_yacht.row_start, new_yacht.col_start)
+
 		// if we get a proper yacht we push it to all yachts array
 		yachts.push(new_yacht);
 	}
-
 	return yachts
 }
 
@@ -226,7 +235,9 @@ module.exports = function (socket, _io) {
 			id: this.id,
 			username: username,
 			yachts: getNewYachts(),
-			move: false
+			move: false,
+			tries: [],
+			killed_ships: 0
 		}
 
 		room.users.push(user);
@@ -257,7 +268,7 @@ module.exports = function (socket, _io) {
 
 			// Push the username and yachts for each user into the empty userYachts array
 			room.users.forEach((user) => {
-				userYachts.push({user: user.username, yachts: user.yachts})
+				userYachts.push({ user: user.username, yachts: user.yachts })
 			})
 		};
 	});
@@ -266,84 +277,54 @@ module.exports = function (socket, _io) {
 
 	socket.on('game:shoot', (shootTarget) => {
 
+		debug('game:shoot target = ', shootTarget)
 		if (shootTarget) {
-		const room = rooms.find(room => room.users.find(user => user.id === socket.id));
-		const user = room.users.find(user => user.id === socket.id);
+			const room = rooms.find(room => room.users.find(user => user.id === socket.id))
+			if (!room) {
+				return
+			}
 
-		debug(user.username)
-		debug("room", room.id)
+			const user = room.users.find(user => user.id === socket.id)
+			const opponent = room.users.find(user => user.id !== socket.id)
 
-		// Iterate over, and filter out the names and respective yachts,
-		userYachts.filter((item) => {
-			// Conditional that accesses only the other user's yachts
-			if (item.user !== user.username) {
-				// Map out other users yachts
-				item.yachts.map((yacht) => {
-					// debug(yacht)
-					// map out the rows and columns ( coordinates ) of the yachts aswell as their index in the array
-					yacht.points.map((coordinate, index) => {
-						// Check if the coordinates of the shootTarget match any of the other users yacht coordinates and if so, splice it from the array and push it in hitYachtCoordinate array, if not, return nothing
-						if (coordinate.row === shootTarget.row && coordinate.col === shootTarget.col) {
-							
+			user.move = false
+			opponent.move = true
 
-							let rowCor = coordinate.row+1
-							let colCor = coordinate.col+1
-							io.to(user.id).emit('shot:hit', rowCor, colCor)
-							
-							hitYachtCoordinate.push({pointsHit: yacht.points.splice(index, 1), shooter: user.username})
-							debug('yacht-points:', yacht.points, 'hitYachtCoordinate-array:', hitYachtCoordinate)
+			let isMiss = true
 
-							yachtHits.push(hitYachtCoordinate.filter((hit) => {
-								/* debug(hit.pointsHit)
-								return hit.pointsHit */
-								let yachtHit = {
-									corrs: hit.pointsHit,
-									id: socket.id
-								}
+			// console.log('opponent yachts', opponent.yachts)
+			debug('usernames: ', user.username, opponent.username)
+			for (let yacht of opponent.yachts) {
+				let shot = yacht.isHit(shootTarget)
+				if (shot) {
+					isMiss = false
 
-								io.to(user.id).emit('store:hit', yachtHit)
-								return yachtHit
-							}))
-							debug("yachthits",yachtHits)
-						} if (coordinate.row !== shootTarget.row && coordinate.col !== shootTarget.col) {
-							
-							let rowCorMiss = coordinate.row+1
-							let colCorMiss = coordinate.col+1
-							/* debug(coordinate) */
-							io.to(user.id).emit('shot:miss', rowCorMiss, colCorMiss)
-						} else {
-							return
-						}
+					if (yacht.is_killed) {
+						user.killed_ships++
+					}
 
-						// Since the yacht.points returns an array of points left on the ship, when a ship is hit, it returns an empty array when a ship is sunk! This conditional checks if the ship that was hit has a length of 0 and if it does, it reports that the ship has been sunk in the terminal.
-						if (yacht.points.length === 0) {
-							debug('a ship has been sunk!')
-						}
-					})
-				})
-			} 
-		})
+					if (user.killed_ships < opponent.yachts.length) {
 
-		let currentMover = user.move
-		// Toggling turn based system
-		socket.emit('change:turn', currentMover)
+						// debug('hit', yacht.hit_points)
+						io.in(room.id).emit('shot:hit', user.id, shootTarget, yacht.is_killed)
+						break
+					} else {
+						// debug('winner', yacht.hit_points)
+						io.in(room.id).emit('shot:winner', user.id, shootTarget, yacht.is_killed)
+						break
+					}
+				}
 
-		// On every shot, check how many hit shots the shooter has made during the game
-		const playerHits = hitYachtCoordinate.reduce((count, e) => { return e.shooter === user.username ? count + 1 : count }, 0);
+			}
 
-		// If the amount of hit shots equals to or for some reason is greater than 11, that played is declared the winner, since it means that all opponent ships are sunk.
-		if (playerHits >= 11) {
-			debug(user.username, 'has won!')
-		}
+			if (isMiss) {
+				user.tries.push(shootTarget)
+				debug('shot:miss: target = ', shootTarget)
+				io.in(room.id).emit('shot:miss', user.id, shootTarget)
+			}
 		}
 	})
 
-	socket.on('next:turn', function (rowCorr, colCorr, room) {
-		const info = {
-			rowCorr: rowCorr,
-			colCorr: colCorr,
-			player: this.id
-		}
-		io.to(room.id).emit('turn', info)
-	})
+
 }
+
