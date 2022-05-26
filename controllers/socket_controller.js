@@ -12,14 +12,6 @@ let waiting_opponent = true;
 // creating a temporary variabel with a name for room
 let roomName = false;
 
-// Empty array of all connected users and their respective yachts
-let userYachts = []
-
-// Empty array containing all yacht coordinates that were hit
-let hitYachtCoordinate = []
-
-let yachtHits = []
-
 // we declare class yacht for create a new yacht
 class Yacht {
 
@@ -42,16 +34,14 @@ class Yacht {
 		this.points = this.getPoints(length, row_start, col_start, vertical)
 		this.hit_points = []
 		this.is_killed = false
-
 	}
 
 	isHit(shootTarget) {
 		// debug('test is Hit', shootTarget, this.points)
 		for (let point of this.points) {
 			if (point.row === shootTarget.row && point.col === shootTarget.col) {
-				debug('we add point', point)
 				this.hit_points.push(shootTarget)
-				debug('lenghth!!!', this.hit_points.length, this.points.length)
+
 				if (this.points.length === this.hit_points.length) {
 					this.is_killed = true
 				}
@@ -166,7 +156,6 @@ const getNewYachts = function () {
 				is_near = existing_yacht.isNear(new_yacht);
 
 				if (is_near) {
-					// console.log("intersection");
 					break;
 				}
 			}
@@ -175,8 +164,6 @@ const getNewYachts = function () {
 			is_not_fit_field = new_yacht.isNotFitField(FIELD_SIZE, FIELD_SIZE)
 			// and we repeat this logic until we get a proper yacht
 		} while (is_near || is_not_fit_field);
-
-		// console.log('user yacht: ', new_yacht.row_start, new_yacht.col_start)
 
 		// if we get a proper yacht we push it to all yachts array
 		yachts.push(new_yacht);
@@ -188,43 +175,39 @@ const handleChatMessage = async function (data) {
 
 	const room = rooms.find(room => room.users.find(user => user.id === this.id));
 	if (!room) {
-		// debug('There is no such room');
-		return;
+		return
 	}
 	// emit `chat:message` event to everyone EXCEPT the sender
-	this.broadcast.to(room.id).emit('chat:message', data);
+	this.broadcast.to(room.id).emit('chat:message', data)
 }
 
 module.exports = function (socket, _io) {
 	// save a reference to the socket.io server instance
 	io = _io;
 
-	// debug(`Client ${socket.id} connected`)
-
 	// handle user disconnect
-	socket.on('disconnect', handleDisconnect);
+	socket.on('disconnect', handleDisconnect)
 
 	socket.on('user:joined', function (username, callback) {
 
 		// if there is no room creating a new room with id equal to the first sockets id
 		if (!roomName) {
-			roomName = 'room_' + this.id;
+			roomName = 'room_' + this.id
 			let room = {
 				id: roomName,
 				users: [],
-			};
+			}
 			// push a new room to all rooms array
 			rooms.push(room);
 		} else {
-			waiting_opponent = false;
+			waiting_opponent = false
 		}
 
-		// looking for a room with a name from temporary variabel in the rooms array
-		const room = rooms.find(room => room.id === roomName);
+		// looking for a room with a name from temporary variable in the rooms array
+		const room = rooms.find(room => room.id === roomName)
 
 		if (!room) {
-			// debug('There is no such room');
-			return;
+			return
 		}
 
 		// join user to this room
@@ -236,13 +219,10 @@ module.exports = function (socket, _io) {
 			username: username,
 			yachts: getNewYachts(),
 			move: false,
-			tries: [],
 			killed_ships: 0
 		}
 
 		room.users.push(user);
-
-		// debug(room.users)
 
 		callback({
 			yachts: user.yachts,
@@ -266,10 +246,6 @@ module.exports = function (socket, _io) {
 			waiting_opponent = true;
 			roomName = false;
 
-			// Push the username and yachts for each user into the empty userYachts array
-			room.users.forEach((user) => {
-				userYachts.push({ user: user.username, yachts: user.yachts })
-			})
 		};
 	});
 
@@ -277,9 +253,10 @@ module.exports = function (socket, _io) {
 
 	socket.on('game:shoot', (shootTarget) => {
 
-		debug('game:shoot target = ', shootTarget)
 		if (shootTarget) {
+
 			const room = rooms.find(room => room.users.find(user => user.id === socket.id))
+
 			if (!room) {
 				return
 			}
@@ -292,8 +269,6 @@ module.exports = function (socket, _io) {
 
 			let isMiss = true
 
-			// console.log('opponent yachts', opponent.yachts)
-			debug('usernames: ', user.username, opponent.username)
 			for (let yacht of opponent.yachts) {
 				let shot = yacht.isHit(shootTarget)
 				if (shot) {
@@ -305,11 +280,9 @@ module.exports = function (socket, _io) {
 
 					if (user.killed_ships < opponent.yachts.length) {
 
-						// debug('hit', yacht.hit_points)
 						io.in(room.id).emit('shot:hit', user.id, shootTarget, yacht.is_killed)
 						break
 					} else {
-						// debug('winner', yacht.hit_points)
 						io.in(room.id).emit('shot:winner', user.id, shootTarget, yacht.is_killed)
 						break
 					}
@@ -318,8 +291,6 @@ module.exports = function (socket, _io) {
 			}
 
 			if (isMiss) {
-				user.tries.push(shootTarget)
-				debug('shot:miss: target = ', shootTarget)
 				io.in(room.id).emit('shot:miss', user.id, shootTarget)
 			}
 		}
