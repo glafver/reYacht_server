@@ -37,18 +37,7 @@ class Yacht {
 	}
 
 	isHit(shootTarget) {
-		// debug('test is Hit', shootTarget, this.points)
-		for (let point of this.points) {
-			if (point.row === shootTarget.row && point.col === shootTarget.col) {
-				this.hit_points.push(shootTarget)
 
-				if (this.points.length === this.hit_points.length) {
-					this.is_killed = true
-				}
-				return true
-			}
-		}
-		return false
 	}
 
 
@@ -264,38 +253,16 @@ module.exports = function (socket, _io) {
 			const user = room.users.find(user => user.id === socket.id)
 			const opponent = room.users.find(user => user.id !== socket.id)
 
-			user.move = false
-			opponent.move = true
 
-			let isMiss = true
+			// In frontend I need this ->
 
-			for (let yacht of opponent.yachts) {
-				let shot = yacht.isHit(shootTarget)
-				if (shot) {
-					isMiss = false
+			// io.in(room.id).emit('shot:miss', user.id, shootTarget)
+			// io.in(room.id).emit('shot:hit', user.id, shootTarget, yacht.is_killed)
+			// io.in(room.id).emit('shot:winner', user.id, shootTarget, yacht.is_killed)
 
-					if (yacht.is_killed) {
-						user.killed_ships++
-					}
 
-					if (user.killed_ships < opponent.yachts.length) {
-
-						io.in(room.id).emit('shot:hit', user.id, shootTarget, yacht.is_killed)
-						break
-					} else {
-						io.in(room.id).emit('shot:winner', user.id, shootTarget, yacht.is_killed)
-						break
-					}
-				}
-
-			}
-
-			if (isMiss) {
-				io.in(room.id).emit('shot:miss', user.id, shootTarget)
-			}
 		}
 	})
-
 
 }
 
