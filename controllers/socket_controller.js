@@ -312,6 +312,7 @@ module.exports = function (socket, _io) {
 
 		// If the amount of hit shots equals to or for some reason is greater than 11, that played is declared the winner, since it means that all opponent ships are sunk.
 		if (playerHits >= 11) {
+			io.in(room.id).emit('game:over', user)
 			debug(user.username, 'has won!')
 		}
 		}
