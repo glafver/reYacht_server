@@ -279,11 +279,14 @@ module.exports = function (socket, _io) {
 					}
 
 					if (user.killed_ships < opponent.yachts.length) {
-
-						io.in(room.id).emit('shot:hit', user.id, shootTarget, yacht.is_killed)
+						if (yacht.is_killed) {
+							io.in(room.id).emit('shot:hit', user.id, shootTarget, yacht)
+						} else {
+							io.in(room.id).emit('shot:hit', user.id, shootTarget, yacht.is_killed)
+						}
 						break
 					} else {
-						io.in(room.id).emit('shot:winner', user.id, shootTarget, yacht.is_killed)
+						io.in(room.id).emit('shot:winner', user.id, shootTarget, yacht)
 						break
 					}
 				}
