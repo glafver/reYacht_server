@@ -240,6 +240,8 @@ module.exports = function (socket, _io) {
 
 	socket.on('chat:message', handleChatMessage);
 
+	// Declaring empty killedYacht variable - yacht will be pushed into here when it is killed, in order for it to be emitted to the client side
+	let killedYacht;
 	socket.on('game:shoot', (shootTarget) => {
 
 		if (shootTarget) {
@@ -267,49 +269,57 @@ module.exports = function (socket, _io) {
 				return coordinate.row === shootTarget.row && coordinate.col === shootTarget.col
 			})
 
-			// Returns true if all enemy yachts are killed - all enemy yacht is_killed === true, otherwise returns false
-			const gameOver = opponent.yachts.every(yacht => {
-				return yacht.is_killed === true
-			})
-
 			// Mapping over yachts
 			opponent.yachts.map((yacht) => {
 				// Mapping over points
 				yacht.points.map((point) => {
 					// Checking if user has hit a yacht point
 					if (point.row === shootTarget.row && point.col === shootTarget.col) {
+
+					// Since there exists a slight delay between clicking a correct coordinate, and said coordinate being blocked from further clicks, verification needs to be added to make sure the tile can't be clicked rapidly, in turn filling the hit_points array with multiple instances of the same coordinate and triggering other bugs down the line such as a yacht being killed, when it shouldn't be.
+
+					// VERIFICATION - checking if the coordinate already exists in the array of hit_points and if it does, returning true, if it doesn't returning false
+					const hasObj = yacht.hit_points.some(coordinate => {
+						return coordinate.row === shootTarget.row && coordinate.col === shootTarget.col
+					})
+					
+					// If hit_points doesn't already contain the hit coordinate, push the coordinate into hit_points
+					if (!hasObj) {
 						// Pushing the hit coordinate into hit_points
 						yacht.hit_points.push(shootTarget)
-						debug('isnt yet', yacht.is_killed)
-						// Checking if the amount of hit points equals the amount of total points for the yacht, in which case the yacht is killed and the is_killed status is set to true, for that yacht
-						if (yacht.hit_points.length === yacht.points.length) {
-							yacht.is_killed = true
-							debug('now it is', yacht.is_killed)
-							
-						}
+					}
+						
+					// Checking if the amount of hit points equals the amount of total points for the yacht, in which case the yacht is killed and the is_killed status is set to true, for that yacht
+					if (yacht.hit_points.length === yacht.points.length) {
+						yacht.is_killed = true
+						killedYacht = yacht
+					}
 					}
 				})
 
-				// If yacht gets hit, emit this to the client side
-				if (isHit) {
-					io.in(room.id).emit('shot:hit', user.id, shootTarget, yacht.is_killed)
-				// If it didn't get hit, the shot must have missed - emit this to the client side
-				} else {
-					io.in(room.id).emit('shot:miss', user.id, shootTarget)
-				}
-
-				// If every enemy yacht gets killed - emit this to the client side
-				if (gameOver) {
-					io.in(room.id).emit('shot:winner', user.id, shootTarget, yacht.is_killed)
-					debug(user.username, 'is the winner')
-				}
 			})
-		}
-			// In frontend I need this ->
 
-			// io.in(room.id).emit('shot:miss', user.id, shootTarget)
-			// io.in(room.id).emit('shot:hit', user.id, shootTarget, user.yacht.is_killed)
-			// io.in(room.id).emit('shot:winner', user.id, shootTarget, user.yacht.is_killed)
+			// If yacht gets hit, emit this to the client side
+			if (isHit) {
+				io.in(room.id).emit('shot:hit', user.id, shootTarget, killedYacht)
+				debug('hit')
+			// If it didn't get hit, the shot must have missed - emit this to the client side
+			} else {
+				io.in(room.id).emit('shot:miss', user.id, shootTarget)
+				debug('miss')
+			}
+
+			// Returns true if all enemy yachts are killed - all enemy yacht is_killed === true, otherwise returns false
+			const gameOver = opponent.yachts.every(yacht => {
+				return yacht.is_killed === true
+			})
+			
+			// If every enemy yacht gets killed - emit this to the client side
+			if (gameOver) {
+				io.in(room.id).emit('shot:winner', user.id, shootTarget, killedYacht)
+				debug(user.username, 'is the winner')
+			}
+		}
 	})
 }
 
