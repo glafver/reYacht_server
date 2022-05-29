@@ -23,21 +23,14 @@ class Yacht {
 		this.row_start = row_start
 		this.col_start = col_start
 
-		if (vertical === 0) {
-			this.row_end = "span " + 1
-			this.col_end = "span " + length
-		} else {
-			this.row_end = "span " + length
-			this.col_end = "span " + 1
-		}
 		// contains information about position of grid divs occupied by our ship
 		this.points = this.getPoints(length, row_start, col_start, vertical)
+
 		this.hit_points = []
 		this.is_killed = false
 	}
 
 	isHit(shootTarget) {
-		// debug('test is Hit', shootTarget, this.points)
 		for (let point of this.points) {
 			if (point.row === shootTarget.row && point.col === shootTarget.col) {
 				this.hit_points.push(shootTarget)
@@ -188,7 +181,7 @@ module.exports = function (socket, _io) {
 	// handle user disconnect
 	socket.on('disconnect', handleDisconnect)
 
-	socket.on('user:joined', function (username, callback) {
+	socket.on('user:joined', function (username, yachts, callback) {
 
 		// if there is no room creating a new room with id equal to the first sockets id
 		if (!roomName) {
@@ -217,9 +210,23 @@ module.exports = function (socket, _io) {
 		let user = {
 			id: this.id,
 			username: username,
-			yachts: getNewYachts(),
 			move: false,
 			killed_ships: 0
+		}
+
+		if (!yachts) {
+			user.yachts = getNewYachts()
+		} else {
+			user.yachts = []
+			for (let yacht of yachts) {
+				if (yacht.vertical === 'horizontal') {
+					yacht.vertical = 0
+				} else {
+					yacht.vertical = 1
+				}
+				let new_yacht = new Yacht(yacht.length, yacht.row_start, yacht.col_start, yacht.vertical)
+				user.yachts.push(new_yacht)
+			}
 		}
 
 		room.users.push(user);
