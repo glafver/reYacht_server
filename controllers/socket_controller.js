@@ -23,21 +23,11 @@ class Yacht {
 		this.row_start = row_start
 		this.col_start = col_start
 
-		if (vertical === 0) {
-			this.row_end = "span " + 1
-			this.col_end = "span " + length
-		} else {
-			this.row_end = "span " + length
-			this.col_end = "span " + 1
-		}
 		// contains information about position of grid divs occupied by our ship
 		this.points = this.getPoints(length, row_start, col_start, vertical)
+
 		this.hit_points = []
 		this.is_killed = false
-	}
-
-	isHit(shootTarget) {
-
 	}
 
 
@@ -177,7 +167,7 @@ module.exports = function (socket, _io) {
 	// handle user disconnect
 	socket.on('disconnect', handleDisconnect)
 
-	socket.on('user:joined', function (username, callback) {
+	socket.on('user:joined', function (username, yachts, callback) {
 
 		// if there is no room creating a new room with id equal to the first sockets id
 		if (!roomName) {
@@ -206,9 +196,23 @@ module.exports = function (socket, _io) {
 		let user = {
 			id: this.id,
 			username: username,
-			yachts: getNewYachts(),
 			move: false,
 			killed_ships: 0
+		}
+
+		if (!yachts) {
+			user.yachts = getNewYachts()
+		} else {
+			user.yachts = []
+			for (let yacht of yachts) {
+				if (yacht.vertical === 'horizontal') {
+					yacht.vertical = 0
+				} else {
+					yacht.vertical = 1
+				}
+				let new_yacht = new Yacht(yacht.length, yacht.row_start, yacht.col_start, yacht.vertical)
+				user.yachts.push(new_yacht)
+			}
 		}
 
 		room.users.push(user);
@@ -256,12 +260,12 @@ module.exports = function (socket, _io) {
 
 			// Empty array that will contain all the enemy yacht points
 			let opponentCoordinates = []
-			
+
 			// Pushing all enemy yacht points into opponentCoordinates array
 			opponent.yachts.map((yacht) => {
 				yacht.points.map((point) => {
 					opponentCoordinates.push(point)
-				} )
+				})
 			})
 
 			// Checking to see if opponent has a ship on a point we just clicked on, in which case it returns true, otherwise it returns false
@@ -276,24 +280,24 @@ module.exports = function (socket, _io) {
 					// Checking if user has hit a yacht point
 					if (point.row === shootTarget.row && point.col === shootTarget.col) {
 
-					// Since there exists a slight delay between clicking a correct coordinate, and said coordinate being blocked from further clicks, verification needs to be added to make sure the tile can't be clicked rapidly, in turn filling the hit_points array with multiple instances of the same coordinate and triggering other bugs down the line such as a yacht being killed, when it shouldn't be.
+						// Since there exists a slight delay between clicking a correct coordinate, and said coordinate being blocked from further clicks, verification needs to be added to make sure the tile can't be clicked rapidly, in turn filling the hit_points array with multiple instances of the same coordinate and triggering other bugs down the line such as a yacht being killed, when it shouldn't be.
 
-					// VERIFICATION - checking if the coordinate already exists in the array of hit_points and if it does, returning true, if it doesn't returning false
-					const hasObj = yacht.hit_points.some(coordinate => {
-						return coordinate.row === shootTarget.row && coordinate.col === shootTarget.col
-					})
-					
-					// If hit_points doesn't already contain the hit coordinate, push the coordinate into hit_points
-					if (!hasObj) {
-						// Pushing the hit coordinate into hit_points
-						yacht.hit_points.push(shootTarget)
-					}
-						
-					// Checking if the amount of hit points equals the amount of total points for the yacht, in which case the yacht is killed and the is_killed status is set to true, for that yacht
-					if (yacht.hit_points.length === yacht.points.length) {
-						yacht.is_killed = true
-						killedYacht = yacht
-					}
+						// VERIFICATION - checking if the coordinate already exists in the array of hit_points and if it does, returning true, if it doesn't returning false
+						const hasObj = yacht.hit_points.some(coordinate => {
+							return coordinate.row === shootTarget.row && coordinate.col === shootTarget.col
+						})
+
+						// If hit_points doesn't already contain the hit coordinate, push the coordinate into hit_points
+						if (!hasObj) {
+							// Pushing the hit coordinate into hit_points
+							yacht.hit_points.push(shootTarget)
+						}
+
+						// Checking if the amount of hit points equals the amount of total points for the yacht, in which case the yacht is killed and the is_killed status is set to true, for that yacht
+						if (yacht.hit_points.length === yacht.points.length) {
+							yacht.is_killed = true
+							killedYacht = yacht
+						}
 					}
 				})
 
@@ -302,22 +306,22 @@ module.exports = function (socket, _io) {
 			// If yacht gets hit, emit this to the client side
 			if (isHit) {
 				io.in(room.id).emit('shot:hit', user.id, shootTarget, killedYacht)
-				debug('hit')
-			// If it didn't get hit, the shot must have missed - emit this to the client side
+				// debug('hit')
+				// If it didn't get hit, the shot must have missed - emit this to the client side
 			} else {
 				io.in(room.id).emit('shot:miss', user.id, shootTarget)
-				debug('miss')
+				// debug('miss')
 			}
 
 			// Returns true if all enemy yachts are killed - all enemy yacht is_killed === true, otherwise returns false
 			const gameOver = opponent.yachts.every(yacht => {
 				return yacht.is_killed === true
 			})
-			
+
 			// If every enemy yacht gets killed - emit this to the client side
 			if (gameOver) {
 				io.in(room.id).emit('shot:winner', user.id, shootTarget, killedYacht)
-				debug(user.username, 'is the winner')
+				// debug(user.username, 'is the winner')
 			}
 		}
 	})
