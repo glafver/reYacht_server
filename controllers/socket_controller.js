@@ -320,10 +320,19 @@ module.exports = function (socket, _io) {
 
 			// If every enemy yacht gets killed - emit this to the client side
 			if (gameOver) {
+				debug(user.yachts)
+				user.yachts = getNewYachts()
+				debug(user.yachts)
 				io.in(room.id).emit('shot:winner', user.id, shootTarget, killedYacht)
-				// debug(user.username, 'is the winner')
+
 			}
 		}
+	})
+
+	socket.on('rematch:offer', username => {
+	const room = rooms.find(room => room.users.find(user => user.id === socket.id))
+	debug(room)
+	socket.broadcast.to(room.id).emit('rematch:requested')
 	})
 }
 
