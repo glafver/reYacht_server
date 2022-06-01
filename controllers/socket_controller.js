@@ -249,8 +249,7 @@ module.exports = function (socket, _io) {
 
 	// Declaring empty killedYacht variable - yacht will be pushed into here when it is killed, in order for it to be emitted to the client side
 	let killedYacht;
-	// Declaring empty killedYacht array - will be used in order to access the coordinates of killed yachts for resetting red squares in the client side on rematch
-	let killedYachts = [];
+
 	socket.on('game:shoot', (shootTarget) => {
 
 		if (shootTarget) {
@@ -334,30 +333,11 @@ module.exports = function (socket, _io) {
 	const opponent = room.users.find(user => user.id !== socket.id)
 	const user = room.users.find(user => user.id === socket.id)
 
-	// Empty userYachtsHp array for storage of user yachts hp
-	const userYachtsHp = []
-
-	// Mapping over the user's yachts
-	user.yachts.map((yacht) => {
-		// Mapping over the user's yacht hitpoints,
-		yacht.hit_points.map((hp) => {
-			// Pushing them into userYachtsHp
-			userYachtsHp.push(hp)
-		})
-
-		// If the yacht has been killed, push it into the killedYachts array
-		if (yacht.hit_points.length === yacht.points.length) {
-			killedYachts.push(yacht)
-		} else {
-			return
-		}
-	})
-
 	// Setting the rematch-button-clicker's yachts to a new set of yachts
 	user.yachts = getNewYachts()
 
 	// Emitting the recalibration of yachts aswell as the hp of the user's yachts and the yachts that have been killed to the user client.
-	socket.emit('recalibrating:yachts', userYachtsHp, killedYachts)
+	socket.emit('recalibrating:yachts')
 
 	// If the rematch button is clicked twice, both players have agreed to rematch and functionality will follow.
 	if (rematch < 2) {
@@ -372,7 +352,7 @@ module.exports = function (socket, _io) {
 
 	// If the rematch variable gets to 2 - it means both users have declared intent to rematch eachother - needs validating code so that the same user cant click on the rematch button triggering the rematch
 	if (rematch === 2) {
-		io.in(room.id).emit('rematch:agreed')
+		io.in(room.id).emit('rematch:agreed', user.yachts)
 	}
 	})
 }
