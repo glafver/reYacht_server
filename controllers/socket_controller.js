@@ -12,6 +12,9 @@ let waiting_opponent = true;
 // creating a temporary variabel with a name for room
 let roomName = false;
 
+// rematch variable initially set to 0, when user clicks to rematch, this will increment by one. If rematch equals 2, then both players have agreed to rematch and further functionality will follow.
+let rematch = 0
+
 // we declare class yacht for create a new yacht
 class Yacht {
 
@@ -246,6 +249,8 @@ module.exports = function (socket, _io) {
 
 	// Declaring empty killedYacht variable - yacht will be pushed into here when it is killed, in order for it to be emitted to the client side
 	let killedYacht;
+	// Declaring empty killedYacht array - will be used in order to access the coordinates of killed yachts for resetting red squares in the client side on rematch
+	let killedYachts = [];
 	socket.on('game:shoot', (shootTarget) => {
 
 		if (shootTarget) {
@@ -273,7 +278,7 @@ module.exports = function (socket, _io) {
 				return coordinate.row === shootTarget.row && coordinate.col === shootTarget.col
 			})
 
-			// Mapping over yachts
+			// Mapping over opponent yachts
 			opponent.yachts.map((yacht) => {
 				// Mapping over points
 				yacht.points.map((point) => {
@@ -300,17 +305,15 @@ module.exports = function (socket, _io) {
 						}
 					}
 				})
-
 			})
 
-			// If yacht gets hit, emit this to the client side
+			// If yacht gets hit,
 			if (isHit) {
+				// Emit the hit to the client side
 				io.in(room.id).emit('shot:hit', user.id, shootTarget, killedYacht)
-				// debug('hit')
 				// If it didn't get hit, the shot must have missed - emit this to the client side
 			} else {
 				io.in(room.id).emit('shot:miss', user.id, shootTarget)
-				// debug('miss')
 			}
 
 			// Returns true if all enemy yachts are killed - all enemy yacht is_killed === true, otherwise returns false
@@ -320,19 +323,57 @@ module.exports = function (socket, _io) {
 
 			// If every enemy yacht gets killed - emit this to the client side
 			if (gameOver) {
-				debug(user.yachts)
-				user.yachts = getNewYachts()
-				debug(user.yachts)
 				io.in(room.id).emit('shot:winner', user.id, shootTarget, killedYacht)
-
 			}
 		}
 	})
 
 	socket.on('rematch:offer', username => {
+	// Adding variables to find the room, opponent and current user
 	const room = rooms.find(room => room.users.find(user => user.id === socket.id))
-	debug(room)
+	const opponent = room.users.find(user => user.id !== socket.id)
+	const user = room.users.find(user => user.id === socket.id)
+
+	// Empty userYachtsHp array for storage of user yachts hp
+	const userYachtsHp = []
+
+	// Mapping over the user's yachts
+	user.yachts.map((yacht) => {
+		// Mapping over the user's yacht hitpoints,
+		yacht.hit_points.map((hp) => {
+			// Pushing them into userYachtsHp
+			userYachtsHp.push(hp)
+		})
+
+		// If the yacht has been killed, push it into the killedYachts array
+		if (yacht.hit_points.length === yacht.points.length) {
+			killedYachts.push(yacht)
+		} else {
+			return
+		}
+	})
+
+	// Setting the rematch-button-clicker's yachts to a new set of yachts
+	user.yachts = getNewYachts()
+
+	// Emitting the recalibration of yachts aswell as the hp of the user's yachts and the yachts that have been killed to the user client.
+	socket.emit('recalibrating:yachts', userYachtsHp, killedYachts)
+
+	// If the rematch button is clicked twice, both players have agreed to rematch and functionality will follow.
+	if (rematch < 2) {
+		rematch += 1
+		debug(rematch)
+	} else {
+		return
+	}
+
+	// Sending information to the other user that a rematch has been requested
 	socket.broadcast.to(room.id).emit('rematch:requested')
+
+	// If the rematch variable gets to 2 - it means both users have declared intent to rematch eachother - needs validating code so that the same user cant click on the rematch button triggering the rematch
+	if (rematch === 2) {
+		io.in(room.id).emit('rematch:agreed')
+	}
 	})
 }
 
