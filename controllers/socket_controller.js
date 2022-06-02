@@ -172,6 +172,7 @@ module.exports = function (socket, _io) {
 
 	socket.on('user:joined', function (username, yachts, callback) {
 
+		debug(`Client ${this.id} connected :)`)
 		// if there is no room creating a new room with id equal to the first sockets id
 		if (!roomName) {
 			roomName = 'room_' + this.id
@@ -251,6 +252,7 @@ module.exports = function (socket, _io) {
 	socket.on('game:shoot', (shootTarget) => {
 
 		if (shootTarget) {
+			debug('during game', rematch)
 			const room = rooms.find(room => room.users.find(user => user.id === socket.id))
 
 			if (!room) {
@@ -311,7 +313,7 @@ module.exports = function (socket, _io) {
 			if (isHit) {
 				// Emit the hit to the client side
 				io.in(room.id).emit('shot:hit', user.id, shootTarget, killedYacht)
-				debug(killedYacht)
+				// debug(killedYacht)
 				// If it didn't get hit, the shot must have missed - emit this to the client side
 			} else {
 				io.in(room.id).emit('shot:miss', user.id, shootTarget)
@@ -329,42 +331,81 @@ module.exports = function (socket, _io) {
 		}
 	})
 
-	socket.on('rematch:offer', username => {
+	socket.on('rematch:offer', () => {
+
 	// Adding variables to find the room, opponent and current user
 	const room = rooms.find(room => room.users.find(user => user.id === socket.id))
-	const opponent = room.users.find(user => user.id !== socket.id)
 	const user = room.users.find(user => user.id === socket.id)
 
-	// Setting the rematch-button-clicker's yachts to a new set of yachts
-	debug('old', user.yachts)
-	user.yachts = getNewYachts();
 	// Resetting the killedYacht variable
 	killedYacht = undefined;
-	debug(killedYacht)
-	// getNewYachts()
-	debug('new', user.yachts)
 
-	// Emitting the recalibration of yachts aswell as the hp of the user's yachts and the yachts that have been killed to the user client.
-	socket.emit('recalibrating:yachts', user.yachts)
+	socket.on('random:yachts', () => {
+		// Setting the rematch-button-clicker's yachts to a new set of yachts
+		user.yachts = getNewYachts();
+		// If the rematch button is clicked twice, both players have agreed to rematch and rematch agreement functionality will follow.
+		if (rematch < 2) {
+			debug('hi')
+			rematch += 1
+			debug(rematch)
+		} else {
+			return
+		}
+		// If the rematch variable gets to 2 - it means both users have declared intent to rematch eachother
+		if (rematch === 2) {
+			// debug(rematch)
+			io.in(room.id).emit('rematch:agreed', user.yachts)
+			rematch = 0
+			debug(rematch)
+		}
+		// Emitting the recalibration of yachts aswell the user move boolean
+		socket.emit('recalibrating:yachts', user.yachts, user.move)
+	})
 
-	// If the rematch button is clicked twice, both players have agreed to rematch and rematch agreement functionality will follow.
-	if (rematch < 2) {
-		rematch += 1
-		debug(rematch)
-	} else {
-		return
-	}
+	socket.on('manual:choice', (tempYachts, callback) => {
+	user.yachts = []
+			for (let yacht of tempYachts) {
+				if (yacht.vertical === 'horizontal') {
+					yacht.vertical = 0
+				} else {
+					yacht.vertical = 1
+				}
+				let new_yacht = new Yacht(yacht.length, yacht.row_start, yacht.col_start, yacht.vertical)
+				user.yachts.push(new_yacht)
+			}
+			callback({
+				yachts: user.yachts,
+			});
+
+		// If the rematch button is clicked twice, both players have agreed to rematch and rematch agreement functionality will follow.
+		if (rematch < 2) {
+			debug('lol')
+			rematch += 1
+			debug(rematch)
+		} else {
+			return
+		}
+		// If the rematch variable gets to 2 - it means both users have declared intent to rematch eachother
+		if (rematch === 2) {
+			debug(rematch)
+			io.in(room.id).emit('rematch:agreed', user.yachts)
+			rematch = 0
+			debug(rematch)
+		}
+		// Emitting the recalibration of yachts aswell as the user move boolean
+		socket.emit('recalibrating:yachts', user.yachts, user.move)
+	})
 
 	// Sending information to the other user that a rematch has been requested
 	socket.broadcast.to(room.id).emit('rematch:requested')
+	})
 
-	// If the rematch variable gets to 2 - it means both users have declared intent to rematch eachother
-	if (rematch === 2) {
-		debug(rematch)
-		io.in(room.id).emit('rematch:agreed', user.yachts)
-		rematch = 0
-		debug(rematch)
-	}
+	socket.on('game:end', () => {
+		const room = rooms.find(room => room.users.find(user => user.id === socket.id));
+		if (!room) {
+			return;
+		}
+		rooms.splice(rooms.indexOf(room), 1);
 	})
 }
 
