@@ -110,6 +110,19 @@ class Yacht {
 //  Handle a user disconnecting
 const handleDisconnect = function () {
 	// debug(`Client ${this.id} disconnected :(`);
+	// find the room that this socket is part of
+	const room = rooms.find(room => room.users.find(user => user.id === this.id));
+
+	// if socket was not in a room, don't broadcast disconnect
+	if (!room) {
+		return;
+	}
+
+	// let everyone in the room know that this user has disconnected
+	this.broadcast.to(room.id).emit('user:disconnected')
+
+	// remove a room because we need to start a new game
+	rooms.splice(rooms.indexOf(room), 1)
 }
 
 const getNewYachts = function () {
