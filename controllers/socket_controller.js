@@ -247,8 +247,6 @@ module.exports = function (socket, _io) {
 
 	socket.on('chat:message', handleChatMessage);
 
-	// Declaring empty killedYacht variable - yacht will be pushed into here when it is killed, in order for it to be emitted to the client side
-	let killedYacht;
 
 	socket.on('game:shoot', (shootTarget) => {
 
@@ -264,6 +262,9 @@ module.exports = function (socket, _io) {
 
 			// Empty array that will contain all the enemy yacht points
 			let opponentCoordinates = []
+
+			// Declaring empty killedYacht variable - yacht will be pushed into here when it is killed, in order for it to be emitted to the client side
+			let killedYacht = false;
 
 			// Pushing all enemy yacht points into opponentCoordinates array
 			opponent.yachts.map((yacht) => {
