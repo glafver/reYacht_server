@@ -324,5 +324,13 @@ module.exports = function (socket, _io) {
 			}
 		}
 	})
+
+	socket.on('game:end', () => {
+		const room = rooms.find(room => room.users.find(user => user.id === socket.id));
+		if (!room) {
+			return;
+		}
+		rooms.splice(rooms.indexOf(room), 1);
+	})
 }
 
